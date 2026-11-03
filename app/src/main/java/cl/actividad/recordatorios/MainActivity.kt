@@ -23,6 +23,17 @@ import androidx.compose.ui.unit.dp
 import cl.actividad.recordatorios.data.DatosSimulados
 import cl.actividad.recordatorios.model.Recordatorio
 import cl.actividad.recordatorios.ui.theme.RecordatoriosAppTheme
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import cl.actividad.recordatorios.domain.FiltroRecordatorios
+import cl.actividad.recordatorios.model.Prioridad
+import cl.actividad.recordatorios.model.EstadoRecordatorio
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,26 +58,107 @@ fun PantallaRecordatorios(
     recordatorios: List<Recordatorio>,
     modifier: Modifier = Modifier
 ) {
+    var indicePrioridad by rememberSaveable { mutableStateOf(0) }
+
+    val prioridades = listOf<Prioridad?>(
+        null,
+        Prioridad.Alta,
+        Prioridad.Media,
+        Prioridad.Baja
+    )
+
+    var indiceEstado by rememberSaveable { mutableStateOf(0) }
+
+    val estados = listOf<EstadoRecordatorio?>(
+        null,
+        EstadoRecordatorio.Pendiente,
+        EstadoRecordatorio.EnProgreso,
+        EstadoRecordatorio.Completado
+    )
+
+    val prioridadSeleccionada = prioridades[indicePrioridad]
+
+    val filtradosPorPrioridad = prioridadSeleccionada?.let { prioridad ->
+        FiltroRecordatorios.porPrioridad(recordatorios, prioridad)
+    } ?: recordatorios
+
+    val estadoSeleccionado = estados[indiceEstado]
+
+    val visibles = estadoSeleccionado?.let { estado ->
+        FiltroRecordatorios.porEstado(filtradosPorPrioridad, estado)
+    } ?: filtradosPorPrioridad
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Mis recordatorios",
                     style = MaterialTheme.typography.headlineMedium
                 )
+
                 Text(
-                    text = "${recordatorios.size} recordatorios",
+                    text = "Prioridad",
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                Row(
+                    modifier = Modifier.horizontalScroll(
+                        rememberScrollState()
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    prioridades.forEachIndexed { indice, prioridad ->
+                        FilterChip(
+                            selected = indicePrioridad == indice,
+                            onClick = { indicePrioridad = indice },
+                            label = {
+                                Text(prioridad?.nombre ?: "Todas")
+                            }
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Estado",
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                Row(
+                    modifier = Modifier.horizontalScroll(
+                        rememberScrollState()
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    estados.forEachIndexed { indice, estado ->
+                        FilterChip(
+                            selected = indiceEstado == indice,
+                            onClick = { indiceEstado = indice },
+                            label = {
+                                Text(estado?.nombre ?: "Todos")
+                            }
+                        )
+                    }
+                }
+
+                Text(
+                    text = "${visibles.size} de ${recordatorios.size} recordatorios",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
 
+        if (visibles.isEmpty()) {
+            item {
+                Text("No hay recordatorios con estos filtros.")
+            }
+        }
+
         items(
-            items = recordatorios,
+            items = visibles,
             key = { it.id }
         ) { recordatorio ->
             TarjetaRecordatorio(recordatorio = recordatorio)
