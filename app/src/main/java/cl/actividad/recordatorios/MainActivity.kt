@@ -52,7 +52,12 @@ import cl.actividad.recordatorios.ui.navigation.Rutas
 import cl.actividad.recordatorios.ui.screen.PantallaCreacion
 import cl.actividad.recordatorios.ui.viewmodel.CreacionViewModel
 import cl.actividad.recordatorios.ui.viewmodel.CreacionViewModelFactory
-
+import androidx.compose.foundation.clickable
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import cl.actividad.recordatorios.ui.screen.PantallaDetalle
+import cl.actividad.recordatorios.ui.viewmodel.DetalleViewModel
+import cl.actividad.recordatorios.ui.viewmodel.DetalleViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -109,6 +114,11 @@ class MainActivity : ComponentActivity() {
                                     onCrear = {
                                         navController.navigate(Rutas.CREACION)
                                     },
+                                    onDetalle = { recordatorioId ->
+                                        navController.navigate(
+                                            Rutas.detalle(recordatorioId)
+                                        )
+                                    },
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -162,6 +172,41 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+
+                        composable(
+                            route = Rutas.DETALLE,
+                            arguments = listOf(
+                                navArgument("recordatorioId") {
+                                    type = NavType.LongType
+                                }
+                            )
+                        ) { entry ->
+
+                            val recordatorioId =
+                                entry.arguments?.getLong("recordatorioId") ?: 0L
+
+                            val detalleViewModel: DetalleViewModel = viewModel(
+                                viewModelStoreOwner = entry,
+                                factory = DetalleViewModelFactory(
+                                    repository = repository,
+                                    recordatorioId = recordatorioId
+                                )
+                            )
+
+                            val detalleState by detalleViewModel.uiState
+                                .collectAsStateWithLifecycle()
+
+                            PantallaDetalle(
+                                uiState = detalleState,
+                                onVolver = {
+                                    navController.popBackStack()
+                                },
+                                onReintentar = {
+                                    detalleViewModel.cargarDetalle()
+                                }
+                            )
+                        }
+
                     }
                 }
             }
@@ -222,6 +267,7 @@ fun ContenidoListado(
     uiState: ListadoUiState,
     onReintentar: () -> Unit,
     onCrear: () -> Unit,
+    onDetalle: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (uiState) {
@@ -268,6 +314,7 @@ fun ContenidoListado(
             PantallaRecordatorios(
                 recordatorios = uiState.recordatorios,
                 onCrear = onCrear,
+                onDetalle = onDetalle,
                 modifier = modifier
             )
         }
@@ -296,7 +343,8 @@ fun ContenidoListado(
 fun PantallaRecordatorios(
     recordatorios: List<Recordatorio>,
     modifier: Modifier = Modifier,
-    onCrear: () -> Unit = {}
+    onCrear: () -> Unit = {},
+    onDetalle: (Long) -> Unit = {}
 ) {
     var indicePrioridad by rememberSaveable { mutableStateOf(0) }
 
@@ -408,7 +456,13 @@ fun PantallaRecordatorios(
             items = visibles,
             key = { it.id }
         ) { recordatorio ->
-            TarjetaRecordatorio(recordatorio = recordatorio)
+
+            TarjetaRecordatorio(
+                recordatorio = recordatorio,
+                onClick = {
+                    onDetalle(recordatorio.id)
+                }
+            )
         }
     }
 }
@@ -416,9 +470,14 @@ fun PantallaRecordatorios(
 @Composable
 fun TarjetaRecordatorio(
     recordatorio: Recordatorio,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
