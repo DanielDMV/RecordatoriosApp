@@ -44,6 +44,15 @@ import cl.actividad.recordatorios.ui.state.ListadoUiState
 import cl.actividad.recordatorios.ui.viewmodel.ListadoViewModel
 import cl.actividad.recordatorios.ui.viewmodel.ListadoViewModelFactory
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import cl.actividad.recordatorios.ui.navigation.Rutas
+import cl.actividad.recordatorios.ui.screen.PantallaCreacion
+import cl.actividad.recordatorios.ui.viewmodel.CreacionViewModel
+import cl.actividad.recordatorios.ui.viewmodel.CreacionViewModelFactory
+
 
 class MainActivity : ComponentActivity() {
 
@@ -54,53 +63,112 @@ class MainActivity : ComponentActivity() {
         setContent {
             RecordatoriosAppTheme {
 
+                val navController = rememberNavController()
+                val repository = AppContainer.recordatoriosRepository
+
                 val listadoViewModel: ListadoViewModel = viewModel(
-                    factory = ListadoViewModelFactory(
-                        AppContainer.recordatoriosRepository
-                    )
+                    factory = ListadoViewModelFactory(repository)
                 )
 
                 val uiState by listadoViewModel.uiState
                     .collectAsStateWithLifecycle()
 
-
-
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
+                    NavHost(
+                        navController = navController,
+                        startDestination = Rutas.LISTADO,
+                        modifier = Modifier.padding(innerPadding)
                     ) {
 
-                        ControlesPrueba(
-                            onCargar = {
-                                listadoViewModel.cargarRecordatorios()
-                            },
-                            onVacio = {
-                                listadoViewModel.simularEstadoVacio()
-                            },
-                            onError = {
-                                listadoViewModel.simularError()
-                            }
-                        )
+                        composable(Rutas.LISTADO) {
 
-                        ContenidoListado(
-                            uiState = uiState,
-                            onReintentar = {
-                                listadoViewModel.cargarRecordatorios()
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
+                            Column(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+
+                                ControlesPrueba(
+                                    onCargar = {
+                                        listadoViewModel.cargarRecordatorios()
+                                    },
+                                    onVacio = {
+                                        listadoViewModel.simularEstadoVacio()
+                                    },
+                                    onError = {
+                                        listadoViewModel.simularError()
+                                    }
+                                )
+
+                                ContenidoListado(
+                                    uiState = uiState,
+                                    onReintentar = {
+                                        listadoViewModel.cargarRecordatorios()
+                                    },
+                                    onCrear = {
+                                        navController.navigate(Rutas.CREACION)
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+
+                        composable(Rutas.CREACION) { entry ->
+
+                            val creacionViewModel: CreacionViewModel =
+                                viewModel(
+                                    viewModelStoreOwner = entry,
+                                    factory = CreacionViewModelFactory(
+                                        repository = repository,
+                                        categorias = DatosSimulados
+                                            .categorias.toList()
+                                    )
+                                )
+
+                            val creacionState by creacionViewModel.uiState
+                                .collectAsStateWithLifecycle()
+
+                            LaunchedEffect(
+                                creacionState.guardadoExitoso
+                            ) {
+                                if (creacionState.guardadoExitoso) {
+                                    listadoViewModel.cargarRecordatorios()
+                                    navController.popBackStack()
+                                }
+                            }
+
+                            PantallaCreacion(
+                                uiState = creacionState,
+                                categorias = creacionViewModel
+                                    .categoriasDisponibles,
+                                onTituloChange = {
+                                    creacionViewModel.actualizarTitulo(it)
+                                },
+                                onDescripcionChange = {
+                                    creacionViewModel.actualizarDescripcion(it)
+                                },
+                                onCategoriaChange = {
+                                    creacionViewModel.seleccionarCategoria(it)
+                                },
+                                onPrioridadChange = {
+                                    creacionViewModel.seleccionarPrioridad(it)
+                                },
+                                onGuardar = {
+                                    creacionViewModel.guardarRecordatorio()
+                                },
+                                onCancelar = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
                     }
                 }
-
             }
         }
     }
 }
+
 
 
 @Composable
@@ -153,6 +221,7 @@ fun ControlesPrueba(
 fun ContenidoListado(
     uiState: ListadoUiState,
     onReintentar: () -> Unit,
+    onCrear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (uiState) {
@@ -189,12 +258,16 @@ fun ContenidoListado(
                     Text("Todavía no existen recordatorios.")
                     Text("Puedes crear uno desde el formulario.")
                 }
+                Button(onClick = onCrear) {
+                    Text("Crear recordatorio")
+                }
             }
         }
 
         is ListadoUiState.ConDatos -> {
             PantallaRecordatorios(
                 recordatorios = uiState.recordatorios,
+                onCrear = onCrear,
                 modifier = modifier
             )
         }
@@ -222,7 +295,8 @@ fun ContenidoListado(
 @Composable
 fun PantallaRecordatorios(
     recordatorios: List<Recordatorio>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCrear: () -> Unit = {}
 ) {
     var indicePrioridad by rememberSaveable { mutableStateOf(0) }
 
@@ -265,6 +339,13 @@ fun PantallaRecordatorios(
                     text = "Mis recordatorios",
                     style = MaterialTheme.typography.headlineMedium
                 )
+
+                Button(
+                    onClick = onCrear,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Crear recordatorio")
+                }
 
                 Text(
                     text = "Prioridad",
