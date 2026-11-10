@@ -34,19 +34,185 @@ import androidx.compose.runtime.setValue
 import cl.actividad.recordatorios.domain.FiltroRecordatorios
 import cl.actividad.recordatorios.model.Prioridad
 import cl.actividad.recordatorios.model.EstadoRecordatorio
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cl.actividad.recordatorios.ui.state.ListadoUiState
+import cl.actividad.recordatorios.ui.viewmodel.ListadoViewModel
+import cl.actividad.recordatorios.ui.viewmodel.ListadoViewModelFactory
+import androidx.compose.material3.OutlinedButton
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContent {
             RecordatoriosAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    PantallaRecordatorios(
-                        recordatorios = DatosSimulados.recordatorios,
-                        modifier = Modifier.padding(innerPadding)
+
+                val listadoViewModel: ListadoViewModel = viewModel(
+                    factory = ListadoViewModelFactory(
+                        AppContainer.recordatoriosRepository
                     )
+                )
+
+                val uiState by listadoViewModel.uiState
+                    .collectAsStateWithLifecycle()
+
+
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+
+                        ControlesPrueba(
+                            onCargar = {
+                                listadoViewModel.cargarRecordatorios()
+                            },
+                            onVacio = {
+                                listadoViewModel.simularEstadoVacio()
+                            },
+                            onError = {
+                                listadoViewModel.simularError()
+                            }
+                        )
+
+                        ContenidoListado(
+                            uiState = uiState,
+                            onReintentar = {
+                                listadoViewModel.cargarRecordatorios()
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+            }
+        }
+    }
+}
+
+
+@Composable
+fun ControlesPrueba(
+    onCargar: () -> Unit,
+    onVacio: () -> Unit,
+    onError: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = 16.dp,
+                vertical = 8.dp
+            ),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+
+        Text(
+            text = "Pruebas de estados",
+            style = MaterialTheme.typography.labelMedium
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+
+            OutlinedButton(onClick = onCargar) {
+                Text("Cargar")
+            }
+
+            OutlinedButton(onClick = onVacio) {
+                Text("Vacío")
+            }
+
+            OutlinedButton(onClick = onError) {
+                Text("Error")
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun ContenidoListado(
+    uiState: ListadoUiState,
+    onReintentar: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (uiState) {
+
+        ListadoUiState.Cargando -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator()
+
+                    Text(
+                        text = "Cargando recordatorios...",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+
+        ListadoUiState.Vacio -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("Todavía no existen recordatorios.")
+                    Text("Puedes crear uno desde el formulario.")
+                }
+            }
+        }
+
+        is ListadoUiState.ConDatos -> {
+            PantallaRecordatorios(
+                recordatorios = uiState.recordatorios,
+                modifier = modifier
+            )
+        }
+
+        is ListadoUiState.Error -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(uiState.mensaje)
+
+                    Button(onClick = onReintentar) {
+                        Text("Reintentar")
+                    }
                 }
             }
         }
