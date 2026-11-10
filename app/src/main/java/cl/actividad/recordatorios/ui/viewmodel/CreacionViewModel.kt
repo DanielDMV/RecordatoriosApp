@@ -28,6 +28,7 @@ class CreacionViewModel(
     fun actualizarTitulo(nuevoTitulo: String) {
         _uiState.value = _uiState.value.copy(
             titulo = nuevoTitulo,
+            tituloModificado = true,
             mensajeError = null
         )
     }

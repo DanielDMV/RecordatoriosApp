@@ -43,13 +43,13 @@ fun PantallaCreacion(
             label = { Text("Título") },
             singleLine = true,
             enabled = !uiState.enviando,
-            isError = uiState.intentoGuardar &&
+            isError = uiState.tituloModificado &&
                     !uiState.tituloValido,
             supportingText = {
-                if (uiState.intentoGuardar &&
+                if (uiState.tituloModificado &&
                     !uiState.tituloValido
                 ) {
-                    Text("Ingresa al menos 4 caracteres.")
+                    Text("El título debe contener al menos 4 caracteres.")
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -64,7 +64,18 @@ fun PantallaCreacion(
             enabled = !uiState.enviando,
             isError = !uiState.descripcionValida,
             supportingText = {
-                Text("${uiState.descripcion.length}/200 caracteres")
+                Column {
+                    Text(
+                        text = "${uiState.descripcion.length}/200 caracteres"
+                    )
+
+                    if (uiState.descripcion.length == 200) {
+                        Text(
+                            text = "Has alcanzado el límite permitido.",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             },
             modifier = Modifier.fillMaxWidth()
         )

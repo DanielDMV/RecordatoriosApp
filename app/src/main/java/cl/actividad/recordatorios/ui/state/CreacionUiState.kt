@@ -5,6 +5,7 @@ import cl.actividad.recordatorios.model.Prioridad
 
 data class CreacionUiState(
     val titulo: String = "",
+    val tituloModificado: Boolean = false,
     val descripcion: String = "",
     val categoria: Categoria? = null,
     val prioridad: Prioridad? = null,

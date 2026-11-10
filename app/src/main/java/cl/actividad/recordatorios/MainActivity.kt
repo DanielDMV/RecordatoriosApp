@@ -302,10 +302,12 @@ fun ContenidoListado(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text("Todavía no existen recordatorios.")
+
                     Text("Puedes crear uno desde el formulario.")
-                }
-                Button(onClick = onCrear) {
-                    Text("Crear recordatorio")
+
+                    Button(onClick = onCrear) {
+                        Text("Crear recordatorio")
+                    }
                 }
             }
         }
