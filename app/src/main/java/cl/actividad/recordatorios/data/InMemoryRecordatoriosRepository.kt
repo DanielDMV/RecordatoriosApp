@@ -1,6 +1,9 @@
 package cl.actividad.recordatorios.data
 
 import cl.actividad.recordatorios.model.Recordatorio
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -13,6 +16,12 @@ class InMemoryRecordatoriosRepository(
 
     private val recordatorios =
         recordatoriosIniciales.toMutableList()
+
+    private val _recordatoriosFlow =
+        MutableStateFlow(recordatorios.toList())
+
+    override fun observarTodos(): Flow<List<Recordatorio>> =
+        _recordatoriosFlow.asStateFlow()
 
     override suspend fun obtenerTodos(): List<Recordatorio> =
         mutex.withLock {
@@ -31,6 +40,57 @@ class InMemoryRecordatoriosRepository(
             }
 
             recordatorios.add(recordatorio)
+            _recordatoriosFlow.value = recordatorios.toList()
         }
     }
+
+    override suspend fun crear(recordatorio: Recordatorio): Long =
+        mutex.withLock {
+            val siguienteId =
+                (recordatorios.maxOfOrNull { it.id } ?: 0L) + 1L
+
+            recordatorios.add(
+                recordatorio.copy(id = siguienteId)
+            )
+
+            _recordatoriosFlow.value = recordatorios.toList()
+
+            siguienteId
+        }
+
+
+    override suspend fun actualizar(
+        recordatorio: Recordatorio
+    ): Boolean = mutex.withLock {
+
+        val indice = recordatorios.indexOfFirst {
+            it.id == recordatorio.id
+        }
+
+        if (indice == -1) {
+            false
+        } else {
+            recordatorios[indice] = recordatorio
+
+            _recordatoriosFlow.value = recordatorios.toList()
+
+            true
+        }
+    }
+
+    override suspend fun eliminarPorId(
+        id: Long
+    ): Boolean = mutex.withLock {
+
+        val eliminado = recordatorios.removeAll {
+            it.id == id
+        }
+
+        if (eliminado) {
+            _recordatoriosFlow.value = recordatorios.toList()
+        }
+
+        eliminado
+    }
+
 }

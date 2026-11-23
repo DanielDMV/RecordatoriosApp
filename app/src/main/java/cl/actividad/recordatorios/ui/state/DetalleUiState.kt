@@ -7,8 +7,12 @@ sealed interface DetalleUiState {
     data object Cargando : DetalleUiState
 
     data class ConDatos(
-        val recordatorio: Recordatorio
+        val recordatorio: Recordatorio,
+        val eliminando: Boolean = false,
+        val mensajeError: String? = null
     ) : DetalleUiState
+
+    data object Eliminado : DetalleUiState
 
     data object NoEncontrado : DetalleUiState
 
@@ -16,5 +20,3 @@ sealed interface DetalleUiState {
         val mensaje: String
     ) : DetalleUiState
 }
-
-

@@ -99,7 +99,7 @@ class CreacionViewModel(
                         ) + 1L
 
                 val nuevoRecordatorio = Recordatorio(
-                    id = siguienteId,
+                    id = 0L,
                     titulo = estadoActual.titulo.trim(),
                     descripcion = estadoActual.descripcion
                         .trim()
@@ -109,7 +109,7 @@ class CreacionViewModel(
                     estado = EstadoRecordatorio.Pendiente
                 )
 
-                repository.guardar(nuevoRecordatorio)
+                repository.crear(nuevoRecordatorio)
 
                 _uiState.value = _uiState.value.copy(
                     enviando = false,

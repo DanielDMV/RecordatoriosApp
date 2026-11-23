@@ -1,27 +1,53 @@
 package cl.actividad.recordatorios
 
 import android.content.Context
-import cl.actividad.recordatorios.data.InMemoryRecordatoriosRepository
+import androidx.room.Room
 import cl.actividad.recordatorios.data.RecordatoriosRepository
+import cl.actividad.recordatorios.data.local.RecordatoriosDatabase
+import cl.actividad.recordatorios.data.local.RoomRecordatoriosRepository
 import cl.actividad.recordatorios.data.preferences.DataStorePreferencesRepository
 import cl.actividad.recordatorios.data.preferences.UserPreferencesRepository
 
 object AppContainer {
 
-    val recordatoriosRepository: RecordatoriosRepository =
-        InMemoryRecordatoriosRepository()
+    private var database: RecordatoriosDatabase? = null
+
+    private var _recordatoriosRepository: RecordatoriosRepository? = null
 
     private var _preferencesRepository: UserPreferencesRepository? = null
 
-    val preferencesRepository: UserPreferencesRepository
-        get() = checkNotNull(_preferencesRepository) {
-            "AppContainer debe inicializarse antes de acceder a DataStore."
+    val recordatoriosRepository: RecordatoriosRepository
+        get() = checkNotNull(_recordatoriosRepository) {
+            "El repositorio de recordatorios no esta inicializado."
         }
 
+    val preferencesRepository: UserPreferencesRepository
+        get() = checkNotNull(_preferencesRepository) {
+            "El repositorio de preferencias no esta inicializado."
+        }
+
+    @Synchronized
     fun initialize(context: Context) {
+
+        val appContext = context.applicationContext
+
+        if (database == null) {
+            database = Room.databaseBuilder(
+                appContext,
+                RecordatoriosDatabase::class.java,
+                "recordatorios.db"
+            ).build()
+        }
+
+        if (_recordatoriosRepository == null) {
+            _recordatoriosRepository = RoomRecordatoriosRepository(
+                checkNotNull(database).recordatorioDao()
+            )
+        }
+
         if (_preferencesRepository == null) {
             _preferencesRepository = DataStorePreferencesRepository(
-                context.applicationContext
+                appContext
             )
         }
     }

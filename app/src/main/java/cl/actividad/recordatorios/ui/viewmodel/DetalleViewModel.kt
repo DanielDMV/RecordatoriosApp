@@ -50,5 +50,42 @@ class DetalleViewModel(
             }
         }
     }
-}
 
+    fun eliminarRecordatorio() {
+
+        val estadoActual =
+            _uiState.value as? DetalleUiState.ConDatos
+                ?: return
+
+        if (estadoActual.eliminando) return
+
+        viewModelScope.launch {
+
+            _uiState.value = estadoActual.copy(
+                eliminando = true,
+                mensajeError = null
+            )
+
+            try {
+                val eliminado =
+                    repository.eliminarPorId(recordatorioId)
+
+                if (eliminado) {
+                    _uiState.value = DetalleUiState.Eliminado
+                } else {
+                    _uiState.value = DetalleUiState.NoEncontrado
+                }
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                _uiState.value = estadoActual.copy(
+                    eliminando = false,
+                    mensajeError = e.message
+                        ?: "No fue posible eliminar el recordatorio."
+                )
+            }
+        }
+    }
+}

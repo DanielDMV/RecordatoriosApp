@@ -8,5 +8,6 @@ data class Recordatorio(
     val prioridad: Prioridad,
     val estado: EstadoRecordatorio,
     val fechaAviso: String? = null,
-    val ubicacion: String? = null
+    val ubicacion: String? = null,
+    val fechaCreacion: Long = System.currentTimeMillis()
 )

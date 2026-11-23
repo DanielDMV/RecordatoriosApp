@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import cl.actividad.recordatorios.model.Categoria
 import cl.actividad.recordatorios.model.Prioridad
 import cl.actividad.recordatorios.ui.state.CreacionUiState
+import cl.actividad.recordatorios.model.EstadoRecordatorio
 
 @Composable
 fun PantallaCreacion(
@@ -22,8 +23,12 @@ fun PantallaCreacion(
     onPrioridadChange: (Prioridad) -> Unit,
     onGuardar: () -> Unit,
     onCancelar: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+    modifier: Modifier = Modifier,
+    modoEdicion: Boolean = false,
+    estadoSeleccionado: EstadoRecordatorio? = null,
+    onEstadoChange: (EstadoRecordatorio) -> Unit = {}
+)
+ {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -32,10 +37,16 @@ fun PantallaCreacion(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
+
         Text(
-            text = "Nuevo recordatorio",
+            text = if (modoEdicion) {
+                "Editar recordatorio"
+            } else {
+                "Nuevo recordatorio"
+            },
             style = MaterialTheme.typography.headlineMedium
         )
+
 
         OutlinedTextField(
             value = uiState.titulo,
@@ -150,6 +161,40 @@ fun PantallaCreacion(
             )
         }
 
+        if (modoEdicion) {
+
+            Text(
+                text = "Estado",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Row(
+                modifier = Modifier.horizontalScroll(
+                    rememberScrollState()
+                ),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
+                listOf(
+                    EstadoRecordatorio.Pendiente,
+                    EstadoRecordatorio.EnProgreso,
+                    EstadoRecordatorio.Completado
+                ).forEach { estado ->
+
+                    FilterChip(
+                        selected = estadoSeleccionado == estado,
+                        onClick = {
+                            onEstadoChange(estado)
+                        },
+                        enabled = !uiState.enviando,
+                        label = {
+                            Text(estado.nombre)
+                        }
+                    )
+                }
+            }
+        }
+
         uiState.mensajeError?.let { mensaje ->
             Text(
                 text = mensaje,
@@ -159,7 +204,11 @@ fun PantallaCreacion(
 
         if (uiState.guardadoExitoso) {
             Text(
-                text = "Recordatorio guardado correctamente.",
+                text = if (modoEdicion) {
+                    "Recordatorio actualizado correctamente."
+                } else {
+                    "Recordatorio guardado correctamente."
+                },
                 color = MaterialTheme.colorScheme.primary
             )
         }
@@ -189,13 +238,15 @@ fun PantallaCreacion(
                         !uiState.guardadoExitoso,
                 modifier = Modifier.weight(1f)
             ) {
+
                 Text(
-                    if (uiState.enviando) {
-                        "Guardando..."
-                    } else {
-                        "Guardar"
+                    when {
+                        uiState.enviando -> "Guardando..."
+                        modoEdicion -> "Guardar cambios"
+                        else -> "Guardar"
                     }
                 )
+
             }
         }
     }

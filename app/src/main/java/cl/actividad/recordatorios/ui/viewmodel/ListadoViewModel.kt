@@ -1,3 +1,4 @@
+
 package cl.actividad.recordatorios.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -35,15 +36,16 @@ class ListadoViewModel(
             _uiState.value = ListadoUiState.Cargando
 
             try {
-                // Demora simulada para comprobar el estado de carga.
+                // Conservamos la demora de prueba de la Actividad 2.
                 delay(3000)
 
-                val recordatorios = repository.obtenerTodos()
+                repository.observarTodos().collect { recordatorios ->
 
-                _uiState.value = if (recordatorios.isEmpty()) {
-                    ListadoUiState.Vacio
-                } else {
-                    ListadoUiState.ConDatos(recordatorios)
+                    _uiState.value = if (recordatorios.isEmpty()) {
+                        ListadoUiState.Vacio
+                    } else {
+                        ListadoUiState.ConDatos(recordatorios)
+                    }
                 }
 
             } catch (e: CancellationException) {

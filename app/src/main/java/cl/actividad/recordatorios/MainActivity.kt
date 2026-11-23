@@ -240,7 +240,14 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onReintentar = {
                                     detalleViewModel.cargarDetalle()
-                                }
+                                },
+                                onEliminar = {
+                                    detalleViewModel.eliminarRecordatorio()
+                                },
+                                onEliminado = {
+                                    navController.popBackStack()
+                                },
+
                             )
                         }
 
