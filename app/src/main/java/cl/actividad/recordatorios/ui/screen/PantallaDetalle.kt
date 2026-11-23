@@ -34,6 +34,7 @@ fun PantallaDetalle(
     onReintentar: () -> Unit,
     onEliminar: () -> Unit,
     onEliminado: () -> Unit,
+    onEditar: () -> Unit,
     modifier: Modifier = Modifier
 ){
 
@@ -143,6 +144,13 @@ fun PantallaDetalle(
 
             is DetalleUiState.ConDatos -> {
                 val recordatorio = uiState.recordatorio
+
+                Button(
+                    onClick = onEditar,
+                    enabled = !uiState.eliminando
+                ) {
+                    Text("Editar recordatorio")
+                }
 
                 OutlinedButton(
                     onClick = {

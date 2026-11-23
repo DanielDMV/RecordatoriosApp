@@ -65,6 +65,9 @@ import cl.actividad.recordatorios.model.OrdenRecordatorios
 import cl.actividad.recordatorios.model.UserPreferences
 import cl.actividad.recordatorios.ui.viewmodel.PreferenciasViewModel
 import cl.actividad.recordatorios.ui.viewmodel.PreferenciasViewModelFactory
+import cl.actividad.recordatorios.ui.viewmodel.EdicionViewModel
+import cl.actividad.recordatorios.ui.viewmodel.EdicionViewModelFactory
+import cl.actividad.recordatorios.ui.state.EdicionUiState
 
 class MainActivity : ComponentActivity() {
 
@@ -230,6 +233,28 @@ class MainActivity : ComponentActivity() {
                                 )
                             )
 
+                            // INICIO: Actualizar detalle al regresar desde edición
+                            val lifecycleOwner = entry
+
+                            androidx.compose.runtime.DisposableEffect(
+                                lifecycleOwner,
+                                detalleViewModel
+                            ) {
+                                val observer =
+                                    androidx.lifecycle.LifecycleEventObserver { _, event ->
+                                        if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                                            detalleViewModel.cargarDetalle()
+                                        }
+                                    }
+
+                                lifecycleOwner.lifecycle.addObserver(observer)
+
+                                onDispose {
+                                    lifecycleOwner.lifecycle.removeObserver(observer)
+                                }
+                            }
+                            // FIN: Actualizar detalle al regresar desde edición
+
                             val detalleState by detalleViewModel.uiState
                                 .collectAsStateWithLifecycle()
 
@@ -247,10 +272,93 @@ class MainActivity : ComponentActivity() {
                                 onEliminado = {
                                     navController.popBackStack()
                                 },
-
+                                onEditar = {
+                                    navController.navigate(
+                                        Rutas.edicion(recordatorioId)
+                                    )
+                                },
                             )
                         }
 
+                        composable(
+                            route = Rutas.EDICION,
+                            arguments = listOf(
+                                navArgument("recordatorioId") {
+                                    type = NavType.LongType
+                                }
+                            )
+                        ) { entry ->
+
+                            val recordatorioId =
+                                entry.arguments?.getLong("recordatorioId") ?: 0L
+
+                            val edicionViewModel: EdicionViewModel = viewModel(
+                                viewModelStoreOwner = entry,
+                                factory = EdicionViewModelFactory(
+                                    repository = repository,
+                                    recordatorioId = recordatorioId,
+                                    categorias = DatosSimulados.categorias.toList()
+                                )
+                            )
+
+                            val edicionState by edicionViewModel.uiState
+                                .collectAsStateWithLifecycle()
+
+                            LaunchedEffect(edicionState) {
+                                if (edicionState == EdicionUiState.Guardado) {
+                                    navController.popBackStack()
+                                }
+                            }
+
+                            when (val estado = edicionState) {
+
+                                EdicionUiState.Cargando -> {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
+
+                                is EdicionUiState.Formulario -> {
+                                    PantallaCreacion(
+                                        uiState = estado.datos,
+                                        categorias = edicionViewModel.categoriasDisponibles,
+                                        onTituloChange = edicionViewModel::actualizarTitulo,
+                                        onDescripcionChange =
+                                            edicionViewModel::actualizarDescripcion,
+                                        onCategoriaChange =
+                                            edicionViewModel::seleccionarCategoria,
+                                        onPrioridadChange =
+                                            edicionViewModel::seleccionarPrioridad,
+                                        onGuardar = edicionViewModel::guardarCambios,
+                                        onCancelar = {
+                                            navController.popBackStack()
+                                        },
+                                        modoEdicion = true,
+                                        estadoSeleccionado = estado.estado,
+                                        onEstadoChange =
+                                            edicionViewModel::seleccionarEstado
+                                    )
+                                }
+
+                                EdicionUiState.NoEncontrado -> {
+                                    Text("El recordatorio solicitado no existe.")
+                                }
+
+                                is EdicionUiState.Error -> {
+                                    Text(
+                                        text = estado.mensaje,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+
+                                EdicionUiState.Guardado -> {
+                                    // LaunchedEffect administra la navegación.
+                                }
+                            }
+                        }
                     }
                 }
             }
