@@ -7,6 +7,7 @@ import cl.actividad.recordatorios.data.local.RecordatoriosDatabase
 import cl.actividad.recordatorios.data.local.RoomRecordatoriosRepository
 import cl.actividad.recordatorios.data.preferences.DataStorePreferencesRepository
 import cl.actividad.recordatorios.data.preferences.UserPreferencesRepository
+import cl.actividad.recordatorios.data.local.migration.MIGRATION_1_2
 
 object AppContainer {
 
@@ -36,7 +37,9 @@ object AppContainer {
                 appContext,
                 RecordatoriosDatabase::class.java,
                 "recordatorios.db"
-            ).build()
+            )
+                .addMigrations(MIGRATION_1_2)
+                .build()
         }
 
         if (_recordatoriosRepository == null) {

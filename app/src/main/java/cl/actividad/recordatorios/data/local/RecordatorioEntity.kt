@@ -2,6 +2,7 @@ package cl.actividad.recordatorios.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.ColumnInfo
 
 @Entity(tableName = "recordatorios")
 data class RecordatorioEntity(
@@ -20,5 +21,13 @@ data class RecordatorioEntity(
     val fechaAviso: String?,
     val ubicacion: String?,
 
-    val fechaCreacion: Long
+    val fechaCreacion: Long,
+
+@ColumnInfo(defaultValue = "'PENDIENTE'")
+    val estadoSincronizacion: String = "PENDIENTE",
+
+    val remoteId: String? = null,
+
+@ColumnInfo(defaultValue = "0")
+    val fechaModificacion: Long = 0L
 )

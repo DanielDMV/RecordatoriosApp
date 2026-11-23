@@ -1,0 +1,153 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "5c7119c8100a453889e612d2d5c9310c",
+    "entities": [
+      {
+        "tableName": "recordatorios",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `titulo` TEXT NOT NULL, `descripcion` TEXT, `categoriaId` INTEGER NOT NULL, `categoriaNombre` TEXT NOT NULL, `prioridad` TEXT NOT NULL, `estado` TEXT NOT NULL, `fechaAviso` TEXT, `ubicacion` TEXT, `fechaCreacion` INTEGER NOT NULL, `estadoSincronizacion` TEXT NOT NULL DEFAULT 'PENDIENTE', `remoteId` TEXT, `fechaModificacion` INTEGER NOT NULL DEFAULT 0)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "titulo",
+            "columnName": "titulo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descripcion",
+            "columnName": "descripcion",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "categoriaId",
+            "columnName": "categoriaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoriaNombre",
+            "columnName": "categoriaNombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prioridad",
+            "columnName": "prioridad",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estado",
+            "columnName": "estado",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaAviso",
+            "columnName": "fechaAviso",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ubicacion",
+            "columnName": "ubicacion",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaCreacion",
+            "columnName": "fechaCreacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estadoSincronizacion",
+            "columnName": "estadoSincronizacion",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'PENDIENTE'"
+          },
+          {
+            "fieldPath": "remoteId",
+            "columnName": "remoteId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaModificacion",
+            "columnName": "fechaModificacion",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "operaciones_pendientes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`operationId` TEXT NOT NULL, `recordatorioId` INTEGER NOT NULL, `tipo` TEXT NOT NULL, `remoteId` TEXT, `payloadJson` TEXT, `intentos` INTEGER NOT NULL, `creadaEn` INTEGER NOT NULL, PRIMARY KEY(`operationId`))",
+        "fields": [
+          {
+            "fieldPath": "operationId",
+            "columnName": "operationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordatorioId",
+            "columnName": "recordatorioId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remoteId",
+            "columnName": "remoteId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "payloadJson",
+            "columnName": "payloadJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "intentos",
+            "columnName": "intentos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creadaEn",
+            "columnName": "creadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "operationId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5c7119c8100a453889e612d2d5c9310c')"
+    ]
+  }
+}
