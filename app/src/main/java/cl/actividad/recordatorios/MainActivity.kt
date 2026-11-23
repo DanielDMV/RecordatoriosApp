@@ -58,15 +58,43 @@ import androidx.navigation.navArgument
 import cl.actividad.recordatorios.ui.screen.PantallaDetalle
 import cl.actividad.recordatorios.ui.viewmodel.DetalleViewModel
 import cl.actividad.recordatorios.ui.viewmodel.DetalleViewModelFactory
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.Switch
+import cl.actividad.recordatorios.model.TemaApp
+import cl.actividad.recordatorios.model.OrdenRecordatorios
+import cl.actividad.recordatorios.model.UserPreferences
+import cl.actividad.recordatorios.ui.viewmodel.PreferenciasViewModel
+import cl.actividad.recordatorios.ui.viewmodel.PreferenciasViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        AppContainer.initialize(applicationContext)
+
         enableEdgeToEdge()
 
         setContent {
-            RecordatoriosAppTheme {
+
+            val preferenciasViewModel: PreferenciasViewModel = viewModel(
+                factory = PreferenciasViewModelFactory(
+                    AppContainer.preferencesRepository
+                )
+            )
+
+            val preferencias by preferenciasViewModel.preferencias
+                .collectAsStateWithLifecycle()
+
+            val temaOscuro = when (preferencias.tema) {
+                TemaApp.SISTEMA -> isSystemInDarkTheme()
+                TemaApp.CLARO -> false
+                TemaApp.OSCURO -> true
+            }
+
+            RecordatoriosAppTheme(
+                darkTheme = temaOscuro
+            ) {
 
                 val navController = rememberNavController()
                 val repository = AppContainer.recordatoriosRepository
@@ -106,8 +134,17 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
 
+                                ControlesPreferencias(
+                                    preferencias = preferencias,
+                                    onTemaChange = preferenciasViewModel::cambiarTema,
+                                    onMostrarCompletadosChange =
+                                        preferenciasViewModel::cambiarMostrarCompletados,
+                                    onOrdenChange = preferenciasViewModel::cambiarOrden
+                                )
+
                                 ContenidoListado(
                                     uiState = uiState,
+                                    preferencias = preferencias,
                                     onReintentar = {
                                         listadoViewModel.cargarRecordatorios()
                                     },
@@ -214,7 +251,92 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun ControlesPreferencias(
+    preferencias: UserPreferences,
+    onTemaChange: (TemaApp) -> Unit,
+    onMostrarCompletadosChange: (Boolean) -> Unit,
+    onOrdenChange: (OrdenRecordatorios) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
 
+        Text(
+            text = "Preferencias",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text("Tema visual")
+
+        Row(
+            modifier = Modifier.horizontalScroll(
+                rememberScrollState()
+            ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TemaApp.entries.forEach { tema ->
+                FilterChip(
+                    selected = preferencias.tema == tema,
+                    onClick = { onTemaChange(tema) },
+                    label = {
+                        Text(
+                            when (tema) {
+                                TemaApp.SISTEMA -> "Sistema"
+                                TemaApp.CLARO -> "Claro"
+                                TemaApp.OSCURO -> "Oscuro"
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Mostrar completados")
+
+            Switch(
+                checked = preferencias.mostrarCompletados,
+                onCheckedChange = onMostrarCompletadosChange
+            )
+        }
+
+        Text("Ordenar por")
+
+        Row(
+            modifier = Modifier.horizontalScroll(
+                rememberScrollState()
+            ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OrdenRecordatorios.entries.forEach { orden ->
+                FilterChip(
+                    selected = preferencias.orden == orden,
+                    onClick = { onOrdenChange(orden) },
+                    label = {
+                        Text(
+                            when (orden) {
+                                OrdenRecordatorios.MAS_RECIENTES ->
+                                    "Más recientes"
+
+                                OrdenRecordatorios.PRIORIDAD ->
+                                    "Prioridad"
+                            }
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun ControlesPrueba(
@@ -265,6 +387,7 @@ fun ControlesPrueba(
 @Composable
 fun ContenidoListado(
     uiState: ListadoUiState,
+    preferencias: UserPreferences,
     onReintentar: () -> Unit,
     onCrear: () -> Unit,
     onDetalle: (Long) -> Unit,
@@ -317,7 +440,8 @@ fun ContenidoListado(
                 recordatorios = uiState.recordatorios,
                 onCrear = onCrear,
                 onDetalle = onDetalle,
-                modifier = modifier
+                modifier = modifier,
+                preferencias = preferencias,
             )
         }
 
@@ -346,7 +470,8 @@ fun PantallaRecordatorios(
     recordatorios: List<Recordatorio>,
     modifier: Modifier = Modifier,
     onCrear: () -> Unit = {},
-    onDetalle: (Long) -> Unit = {}
+    onDetalle: (Long) -> Unit = {},
+    preferencias: UserPreferences = UserPreferences()
 ) {
     var indicePrioridad by rememberSaveable { mutableStateOf(0) }
 
@@ -366,11 +491,36 @@ fun PantallaRecordatorios(
         EstadoRecordatorio.Completado
     )
 
+    val registrosVisibles = if (preferencias.mostrarCompletados) {
+        recordatorios
+    } else {
+        recordatorios.filter {
+            it.estado != EstadoRecordatorio.Completado
+        }
+    }
+
+    val registrosOrdenados = when (preferencias.orden) {
+
+        OrdenRecordatorios.MAS_RECIENTES ->
+            registrosVisibles.sortedByDescending { it.id }
+
+        OrdenRecordatorios.PRIORIDAD ->
+            registrosVisibles.sortedWith(
+                compareBy<Recordatorio> {
+                    when (it.prioridad) {
+                        Prioridad.Alta -> 0
+                        Prioridad.Media -> 1
+                        Prioridad.Baja -> 2
+                    }
+                }.thenByDescending { it.id }
+            )
+    }
+
     val prioridadSeleccionada = prioridades[indicePrioridad]
 
     val filtradosPorPrioridad = prioridadSeleccionada?.let { prioridad ->
-        FiltroRecordatorios.porPrioridad(recordatorios, prioridad)
-    } ?: recordatorios
+        FiltroRecordatorios.porPrioridad(registrosOrdenados, prioridad)
+    } ?: registrosOrdenados
 
     val estadoSeleccionado = estados[indiceEstado]
 
