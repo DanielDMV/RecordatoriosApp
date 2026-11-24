@@ -68,6 +68,8 @@ import cl.actividad.recordatorios.ui.viewmodel.PreferenciasViewModelFactory
 import cl.actividad.recordatorios.ui.viewmodel.EdicionViewModel
 import cl.actividad.recordatorios.ui.viewmodel.EdicionViewModelFactory
 import cl.actividad.recordatorios.ui.state.EdicionUiState
+import cl.actividad.recordatorios.ui.viewmodel.SincronizacionViewModel
+import cl.actividad.recordatorios.ui.viewmodel.SincronizacionViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -105,6 +107,22 @@ class MainActivity : ComponentActivity() {
                 val listadoViewModel: ListadoViewModel = viewModel(
                     factory = ListadoViewModelFactory(repository)
                 )
+
+                val sincronizacionViewModel: SincronizacionViewModel = viewModel(
+                    factory = SincronizacionViewModelFactory(
+                        if (AppContainer.servidorRemotoConfigurado) {
+                            AppContainer.sincronizadorCreaciones
+                        } else {
+                            null
+                        }
+                    )
+                )
+
+                val mensajeSincronizacion by sincronizacionViewModel.mensaje
+                    .collectAsStateWithLifecycle()
+
+                val sincronizando by sincronizacionViewModel.procesando
+                    .collectAsStateWithLifecycle()
 
                 val uiState by listadoViewModel.uiState
                     .collectAsStateWithLifecycle()
@@ -144,6 +162,32 @@ class MainActivity : ComponentActivity() {
                                         preferenciasViewModel::cambiarMostrarCompletados,
                                     onOrdenChange = preferenciasViewModel::cambiarOrden
                                 )
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = sincronizacionViewModel::sincronizar,
+                                        enabled = AppContainer.servidorRemotoConfigurado &&
+                                                !sincronizando
+                                    ) {
+                                        Text(
+                                            if (sincronizando) {
+                                                "Sincronizando..."
+                                            } else {
+                                                "Sincronizar"
+                                            }
+                                        )
+                                    }
+
+                                    Text(
+                                        text = mensajeSincronizacion,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
 
                                 ContenidoListado(
                                     uiState = uiState,

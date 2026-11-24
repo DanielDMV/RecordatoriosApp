@@ -10,6 +10,10 @@ import cl.actividad.recordatorios.data.preferences.UserPreferencesRepository
 import cl.actividad.recordatorios.data.local.migration.MIGRATION_1_2
 import cl.actividad.recordatorios.data.local.migration.MIGRATION_2_3
 import cl.actividad.recordatorios.data.local.migration.MIGRATION_3_4
+import cl.actividad.recordatorios.BuildConfig
+import cl.actividad.recordatorios.data.remote.RemoteRecordatoriosDataSource
+import cl.actividad.recordatorios.data.remote.RetrofitClient
+import cl.actividad.recordatorios.data.sync.SincronizadorCreaciones
 
 object AppContainer {
 
@@ -59,5 +63,28 @@ object AppContainer {
                 appContext
             )
         }
+
+        if (_sincronizadorCreaciones == null && servidorRemotoConfigurado) {
+
+            val api = RetrofitClient.crear()
+
+            _sincronizadorCreaciones = SincronizadorCreaciones(
+                database = checkNotNull(database),
+                remoto = RemoteRecordatoriosDataSource(api)
+            )
+        }
     }
+    private var _sincronizadorCreaciones: SincronizadorCreaciones? = null
+
+    val servidorRemotoConfigurado: Boolean
+        get() {
+            val url = BuildConfig.API_BASE_URL
+            return url.startsWith("https://") &&
+                    !url.contains("example.com")
+        }
+
+    val sincronizadorCreaciones: SincronizadorCreaciones
+        get() = checkNotNull(_sincronizadorCreaciones) {
+            "El sincronizador no esta inicializado."
+        }
 }
