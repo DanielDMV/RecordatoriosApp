@@ -2,6 +2,7 @@ package cl.actividad.recordatorios.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.ColumnInfo
 
 @Entity(tableName = "operaciones_pendientes")
 data class OperacionPendienteEntity(
@@ -18,5 +19,18 @@ data class OperacionPendienteEntity(
 
     val intentos: Int = 0,
 
-    val creadaEn: Long
+    val creadaEn: Long,
+
+    @ColumnInfo(defaultValue = "'PENDIENTE'")
+
+    val estadoEnvio: String = "PENDIENTE",
+
+    val ultimoIntentoEn: Long? = null,
+
+    val proximoIntentoEn: Long? = null,
+
+    val ultimoError: String? = null,
+
+    val bloqueadaHasta: Long? = null
+
 )

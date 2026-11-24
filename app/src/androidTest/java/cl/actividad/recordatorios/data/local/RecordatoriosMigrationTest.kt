@@ -12,6 +12,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import cl.actividad.recordatorios.data.local.migration.MIGRATION_2_3
 
 @RunWith(AndroidJUnit4::class)
 class RecordatoriosMigrationTest {
@@ -19,7 +20,7 @@ class RecordatoriosMigrationTest {
     private val nombreBD = "prueba_migracion_room.db"
 
     @Test
-    fun migracion1a2_conservaDatosYEstructura() = runBlocking {
+    fun migracion1a3_conservaDatosYEstructura() = runBlocking {
 
         val context =
             ApplicationProvider.getApplicationContext<Context>()
@@ -78,7 +79,10 @@ class RecordatoriosMigrationTest {
             RecordatoriosDatabase::class.java,
             nombreBD
         )
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(
+                MIGRATION_1_2,
+                MIGRATION_2_3
+            )
             .build()
 
         try {
@@ -118,6 +122,28 @@ class RecordatoriosMigrationTest {
                 AND name = 'operaciones_pendientes'
                 """.trimIndent()
             )
+
+            val columnasV3 = database.openHelper.readableDatabase.query(
+                """
+                PRAGMA table_info(operaciones_pendientes)
+                """.trimIndent()
+            )
+
+            columnasV3.use { cursor ->
+
+                val indiceNombre = cursor.getColumnIndexOrThrow("name")
+                val nombres = mutableSetOf<String>()
+
+                while (cursor.moveToNext()) {
+                    nombres.add(cursor.getString(indiceNombre))
+                }
+
+                assertTrue("estadoEnvio" in nombres)
+                assertTrue("ultimoIntentoEn" in nombres)
+                assertTrue("proximoIntentoEn" in nombres)
+                assertTrue("ultimoError" in nombres)
+                assertTrue("bloqueadaHasta" in nombres)
+            }
 
             tabla.use {
                 assertTrue(it.moveToFirst())
