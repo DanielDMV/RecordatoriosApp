@@ -8,6 +8,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import cl.actividad.recordatorios.data.sync.ResultadoImportacion
 
 class SincronizacionViewModel(
     private val sincronizador: SincronizadorCreaciones?
@@ -39,11 +40,25 @@ class SincronizacionViewModel(
             _mensaje.value = "Sincronizando recordatorios..."
 
             try {
+
                 val confirmados = servicio.sincronizar()
 
-                _mensaje.value =
-                    "Creaciones confirmadas: $confirmados. " +
-                            "Otras operaciones pueden seguir pendientes."
+                val importacion = servicio.importarDesdeServidor()
+
+                _mensaje.value = when (importacion) {
+
+                    is ResultadoImportacion.Correcto ->
+                        "Creaciones confirmadas: $confirmados. " +
+                                "Importados: ${importacion.incorporados}. " +
+                                "Actualizados: ${importacion.actualizados}. " +
+                                "Ignorados: ${importacion.ignorados}."
+
+                    is ResultadoImportacion.Error ->
+                        "Creaciones confirmadas: $confirmados. " +
+                                "Consulta remota: ${importacion.mensaje}. " +
+                                "Los datos locales se conservaron."
+                }
+
 
             } catch (e: CancellationException) {
                 throw e

@@ -44,4 +44,13 @@ interface RecordatorioDao {
 
     @Query("SELECT COUNT(*) FROM recordatorios")
     suspend fun contar(): Int
+
+    @Query("""
+    SELECT * FROM recordatorios
+    WHERE remoteId = :remoteId
+    LIMIT 1
+""")
+    suspend fun obtenerPorRemoteId(
+        remoteId: String
+    ): RecordatorioEntity?
 }

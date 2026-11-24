@@ -236,5 +236,13 @@ class SincronizadorCreaciones(
 
         return confirmadas
     }
+    private val importador = ImportadorRecordatoriosRemotos(
+        database = database,
+        remoto = remoto
+    )
+
+    suspend fun importarDesdeServidor(): ResultadoImportacion {
+        return importador.importar()
+    }
 
 }
