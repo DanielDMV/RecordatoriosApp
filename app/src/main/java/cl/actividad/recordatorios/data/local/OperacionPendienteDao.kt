@@ -206,6 +206,10 @@ interface OperacionPendienteDao {
           AND tokenBloqueo = :tokenBloqueo
           AND bloqueadaHasta IS NOT NULL
           AND bloqueadaHasta > :ahora
+          AND (
+            :fechaVersionEsperada IS NULL
+             OR fechaModificacion = :fechaVersionEsperada
+            )
     )
       AND remoteId IS NULL
     """
@@ -215,7 +219,8 @@ interface OperacionPendienteDao {
         tokenBloqueo: String,
         remoteId: String,
         estadoFinal: String,
-        ahora: Long
+        ahora: Long,
+        fechaVersionEsperada: Long? = null
     ): Int
 
     @Query(

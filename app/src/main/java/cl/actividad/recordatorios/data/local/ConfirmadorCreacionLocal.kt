@@ -11,7 +11,8 @@ class ConfirmadorCreacionLocal(
         tokenBloqueo: String,
         remoteId: String,
         estadoFinal: String,
-        ahora: Long
+        ahora: Long,
+        fechaVersionEsperada: Long? = null
     ): Boolean {
 
         require(operationId.isNotBlank())
@@ -30,7 +31,8 @@ class ConfirmadorCreacionLocal(
                 tokenBloqueo = tokenBloqueo,
                 remoteId = remoteId,
                 estadoFinal = estadoFinal,
-                ahora = ahora
+                ahora = ahora,
+                fechaVersionEsperada = fechaVersionEsperada
             )
 
             if (actualizados != 1) {
