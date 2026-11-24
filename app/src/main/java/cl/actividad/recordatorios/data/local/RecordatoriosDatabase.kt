@@ -14,4 +14,6 @@ import androidx.room.RoomDatabase
 abstract class RecordatoriosDatabase : RoomDatabase() {
 
     abstract fun recordatorioDao(): RecordatorioDao
+
+    abstract fun operacionPendienteDao(): OperacionPendienteDao
 }

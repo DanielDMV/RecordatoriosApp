@@ -5,19 +5,35 @@ import cl.actividad.recordatorios.model.EstadoRecordatorio
 import cl.actividad.recordatorios.model.Prioridad
 import cl.actividad.recordatorios.model.Recordatorio
 
-fun Recordatorio.toEntity(): RecordatorioEntity =
-    RecordatorioEntity(
-        id = id,
-        titulo = titulo,
-        descripcion = descripcion,
-        categoriaId = categoria.id,
-        categoriaNombre = categoria.nombre,
-        prioridad = prioridad.nombre,
-        estado = estado.nombre,
-        fechaAviso = fechaAviso,
-        ubicacion = ubicacion,
-        fechaCreacion = fechaCreacion
-    )
+
+fun Recordatorio.toEntity(
+    entidadAnterior: RecordatorioEntity? = null
+): RecordatorioEntity = RecordatorioEntity(
+
+    id = id,
+    titulo = titulo,
+    descripcion = descripcion,
+
+    categoriaId = categoria.id,
+    categoriaNombre = categoria.nombre,
+
+    prioridad = prioridad.nombre,
+    estado = estado.nombre,
+
+    fechaAviso = fechaAviso,
+    ubicacion = ubicacion,
+    fechaCreacion = fechaCreacion,
+
+    remoteId = entidadAnterior?.remoteId,
+
+    estadoSincronizacion =
+        entidadAnterior?.estadoSincronizacion
+            ?: "PENDIENTE",
+
+    fechaModificacion =
+        entidadAnterior?.fechaModificacion ?: 0L
+)
+
 
 fun RecordatorioEntity.toDomain(): Recordatorio =
     Recordatorio(

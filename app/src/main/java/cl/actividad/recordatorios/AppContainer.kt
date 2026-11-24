@@ -44,7 +44,7 @@ object AppContainer {
 
         if (_recordatoriosRepository == null) {
             _recordatoriosRepository = RoomRecordatoriosRepository(
-                checkNotNull(database).recordatorioDao()
+                database = checkNotNull(database)
             )
         }
 
