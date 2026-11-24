@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
         RecordatorioEntity::class,
         OperacionPendienteEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class RecordatoriosDatabase : RoomDatabase() {

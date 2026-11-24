@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import cl.actividad.recordatorios.data.local.migration.MIGRATION_2_3
+import cl.actividad.recordatorios.data.local.migration.MIGRATION_3_4
 
 @RunWith(AndroidJUnit4::class)
 class RecordatoriosMigrationTest {
@@ -81,7 +82,8 @@ class RecordatoriosMigrationTest {
         )
             .addMigrations(
                 MIGRATION_1_2,
-                MIGRATION_2_3
+                MIGRATION_2_3,
+                MIGRATION_3_4
             )
             .build()
 

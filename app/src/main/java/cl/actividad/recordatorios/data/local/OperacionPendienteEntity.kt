@@ -31,6 +31,8 @@ data class OperacionPendienteEntity(
 
     val ultimoError: String? = null,
 
-    val bloqueadaHasta: Long? = null
+    val bloqueadaHasta: Long? = null,
+
+    val tokenBloqueo: String? = null
 
 )

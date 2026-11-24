@@ -13,6 +13,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import cl.actividad.recordatorios.data.local.migration.MIGRATION_3_4
 
 @RunWith(AndroidJUnit4::class)
 class RecordatoriosMigration2To3Test {
@@ -20,7 +21,7 @@ class RecordatoriosMigration2To3Test {
     private val nombreBD = "prueba_migracion_room_v2_v3.db"
 
     @Test
-    fun migracion2a3_conservaDatosYClasificaOperaciones() = runBlocking {
+    fun migracion2a4_conservaDatosYClasificaOperaciones() = runBlocking {
 
         val context =
             ApplicationProvider.getApplicationContext<Context>()
@@ -140,7 +141,10 @@ class RecordatoriosMigration2To3Test {
             RecordatoriosDatabase::class.java,
             nombreBD
         )
-            .addMigrations(MIGRATION_2_3)
+            .addMigrations(
+                MIGRATION_2_3,
+                MIGRATION_3_4
+            )
             .build()
 
         try {
@@ -222,7 +226,7 @@ class RecordatoriosMigration2To3Test {
 
             // Verificar versión final.
             assertEquals(
-                3,
+                4,
                 database.openHelper.readableDatabase.version
             )
 

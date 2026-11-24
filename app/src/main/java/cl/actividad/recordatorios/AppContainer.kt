@@ -9,6 +9,7 @@ import cl.actividad.recordatorios.data.preferences.DataStorePreferencesRepositor
 import cl.actividad.recordatorios.data.preferences.UserPreferencesRepository
 import cl.actividad.recordatorios.data.local.migration.MIGRATION_1_2
 import cl.actividad.recordatorios.data.local.migration.MIGRATION_2_3
+import cl.actividad.recordatorios.data.local.migration.MIGRATION_3_4
 
 object AppContainer {
 
@@ -41,7 +42,8 @@ object AppContainer {
             )
                 .addMigrations(
                     MIGRATION_1_2,
-                    MIGRATION_2_3
+                    MIGRATION_2_3,
+                    MIGRATION_3_4
                 )
                 .build()
         }
