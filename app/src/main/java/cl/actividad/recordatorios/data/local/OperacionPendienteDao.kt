@@ -191,4 +191,47 @@ interface OperacionPendienteDao {
         motivo: String
     ): Int
 
+    @Query(
+        """
+    UPDATE recordatorios
+    SET remoteId = :remoteId,
+        estadoSincronizacion = :estadoFinal,
+        fechaModificacion = :ahora
+    WHERE id = (
+        SELECT recordatorioId
+        FROM operaciones_pendientes
+        WHERE operationId = :operationId
+          AND tipo = 'CREAR'
+          AND estadoEnvio = 'EN_PROCESO'
+          AND tokenBloqueo = :tokenBloqueo
+          AND bloqueadaHasta IS NOT NULL
+          AND bloqueadaHasta > :ahora
+    )
+      AND remoteId IS NULL
+    """
+    )
+    suspend fun actualizarRecordatorioConfirmado(
+        operationId: String,
+        tokenBloqueo: String,
+        remoteId: String,
+        estadoFinal: String,
+        ahora: Long
+    ): Int
+
+    @Query(
+        """
+    DELETE FROM operaciones_pendientes
+    WHERE operationId = :operationId
+      AND tipo = 'CREAR'
+      AND estadoEnvio = 'EN_PROCESO'
+      AND tokenBloqueo = :tokenBloqueo
+      AND bloqueadaHasta IS NOT NULL
+      AND bloqueadaHasta > :ahora
+    """
+    )
+    suspend fun eliminarCreacionConfirmada(
+        operationId: String,
+        tokenBloqueo: String,
+        ahora: Long
+    ): Int
 }
