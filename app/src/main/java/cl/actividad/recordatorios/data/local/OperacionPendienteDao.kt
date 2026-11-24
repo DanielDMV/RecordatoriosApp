@@ -234,4 +234,27 @@ interface OperacionPendienteDao {
         tokenBloqueo: String,
         ahora: Long
     ): Int
+
+    @Query(
+        """
+    UPDATE operaciones_pendientes
+    SET estadoEnvio = 'PENDIENTE',
+        tokenBloqueo = NULL,
+        bloqueadaHasta = NULL,
+        proximoIntentoEn = :proximoIntentoEn,
+        ultimoError = :motivo
+    WHERE operationId = :operationId
+      AND estadoEnvio = 'EN_PROCESO'
+      AND tokenBloqueo = :tokenBloqueo
+      AND bloqueadaHasta IS NOT NULL
+      AND bloqueadaHasta > :ahora
+    """
+    )
+    suspend fun reprogramarAntesDeEnviar(
+        operationId: String,
+        tokenBloqueo: String,
+        ahora: Long,
+        proximoIntentoEn: Long,
+        motivo: String
+    ): Int
 }
