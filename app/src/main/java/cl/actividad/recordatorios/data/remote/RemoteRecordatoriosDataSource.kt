@@ -61,4 +61,16 @@ class RemoteRecordatoriosDataSource(
             ResultadoRemoto.SinConexion
         }
     }
+
+    suspend fun consultarOperacion(
+        operationId: String
+    ): ResultadoRemoto<RecordatorioDto> {
+
+        require(operationId.isNotBlank())
+
+        return procesar {
+            api.consultarOperacion(operationId)
+        }
+    }
+
 }

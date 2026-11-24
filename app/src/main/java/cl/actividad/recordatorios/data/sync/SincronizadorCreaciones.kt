@@ -16,7 +16,10 @@ class SincronizadorCreaciones(
     private val recordatorios = database.recordatorioDao()
     private val confirmador = ConfirmadorCreacionLocal(database)
 
+
     suspend fun sincronizar(): Int {
+
+        val confirmadasPorReconciliacion = reconciliarInciertas()
 
         val pendientes = operaciones.obtenerPendientes()
             .filter {
@@ -24,7 +27,7 @@ class SincronizadorCreaciones(
                         it.estadoEnvio == "PENDIENTE"
             }
 
-        var confirmadas = 0
+        var confirmadas = confirmadasPorReconciliacion
 
         for (operacion in pendientes) {
 
@@ -138,4 +141,100 @@ class SincronizadorCreaciones(
 
         return confirmadas
     }
+
+    private suspend fun reconciliarInciertas(): Int {
+
+        val inciertas = operaciones.obtenerOperacionesInciertas()
+            .filter {
+                it.tipo == TipoOperacionPendiente.CREAR.name
+            }
+
+        var confirmadas = 0
+
+        for (operacion in inciertas) {
+
+            when (
+                val resultado = remoto.consultarOperacion(
+                    operacion.operationId
+                )
+            ) {
+
+                is ResultadoRemoto.Exito -> {
+
+                    val local = recordatorios.obtenerPorId(
+                        operacion.recordatorioId
+                    ) ?: continue
+
+                    val remotoEncontrado = resultado.datos
+
+                    // No confirmar una versión distinta de la local.
+                    val mismosDatos =
+                        local.titulo == remotoEncontrado.titulo &&
+                                local.descripcion == remotoEncontrado.descripcion &&
+                                local.categoriaNombre == remotoEncontrado.categoria &&
+                                local.prioridad == remotoEncontrado.prioridad &&
+                                local.estado == remotoEncontrado.estado
+
+                    if (!mismosDatos || remotoEncontrado.id.isBlank()) {
+                        continue
+                    }
+
+                    val recuperada =
+                        operaciones.recuperarCreacionNoEncontrada(
+                            operacion.operationId
+                        )
+
+                    if (recuperada != 1) continue
+
+                    val ahora = System.currentTimeMillis()
+                    val token = UUID.randomUUID().toString()
+
+                    val adquirida = operaciones.adquirirOperacion(
+                        operationId = operacion.operationId,
+                        ahora = ahora,
+                        bloqueadaHasta = ahora + 60_000L,
+                        tokenBloqueo = token
+                    )
+
+                    if (adquirida != 1) continue
+
+                    val confirmada = confirmador.confirmar(
+                        operationId = operacion.operationId,
+                        tokenBloqueo = token,
+                        remoteId = remotoEncontrado.id,
+                        estadoFinal =
+                            EstadoSincronizacion.SINCRONIZADO.name,
+                        ahora = System.currentTimeMillis(),
+                        fechaVersionEsperada = local.fechaModificacion
+                    )
+
+                    if (confirmada) {
+                        confirmadas++
+                    }
+                }
+
+                is ResultadoRemoto.ErrorHttp -> {
+
+                    if (resultado.codigo == 404) {
+                        operaciones.recuperarCreacionNoEncontrada(
+                            operacion.operationId
+                        )
+                    }
+
+                    // Cualquier otro código conserva el estado incierto.
+                }
+
+                ResultadoRemoto.Timeout -> {
+                    // No repetir el POST sin conocer su resultado.
+                }
+
+                ResultadoRemoto.SinConexion -> {
+                    // Conservar la operación para una consulta posterior.
+                }
+            }
+        }
+
+        return confirmadas
+    }
+
 }

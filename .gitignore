@@ -16,3 +16,4 @@ local.properties
 .kotlin/
 /.idea/
 /respaldos/
+/servicio-simulado/*.db

@@ -262,4 +262,22 @@ interface OperacionPendienteDao {
         proximoIntentoEn: Long,
         motivo: String
     ): Int
+
+    @Query(
+        """
+    UPDATE operaciones_pendientes
+    SET estadoEnvio = 'PENDIENTE',
+        tokenBloqueo = NULL,
+        bloqueadaHasta = NULL,
+        proximoIntentoEn = NULL,
+        ultimoError = NULL
+    WHERE operationId = :operationId
+      AND tipo = 'CREAR'
+      AND estadoEnvio = 'RESULTADO_INCIERTO'
+      AND tokenBloqueo IS NULL
+    """
+    )
+    suspend fun recuperarCreacionNoEncontrada(
+        operationId: String
+    ): Int
 }

@@ -27,14 +27,28 @@ android {
         )
     }
 
+
     buildTypes {
+        debug {
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"http://10.0.2.2:8765/\""
+            )
+        }
+
         release {
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                packageScope = setOf(
+                    "androidx.**",
+                    "kotlin.**",
+                    "kotlinx.**"
+                )
             }
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

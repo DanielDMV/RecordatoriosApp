@@ -76,12 +76,14 @@ object AppContainer {
     }
     private var _sincronizadorCreaciones: SincronizadorCreaciones? = null
 
+
     val servidorRemotoConfigurado: Boolean
         get() {
-            val url = BuildConfig.API_BASE_URL
-            return url.startsWith("https://") &&
-                    !url.contains("example.com")
+            return BuildConfig.DEBUG &&
+                    BuildConfig.API_BASE_URL ==
+                    "http://10.0.2.2:8765/"
         }
+
 
     val sincronizadorCreaciones: SincronizadorCreaciones
         get() = checkNotNull(_sincronizadorCreaciones) {

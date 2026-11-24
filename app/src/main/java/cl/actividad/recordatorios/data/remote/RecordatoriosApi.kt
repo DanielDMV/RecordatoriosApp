@@ -5,6 +5,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface RecordatoriosApi {
 
@@ -17,4 +18,10 @@ interface RecordatoriosApi {
         @Header("Idempotency-Key") operationId: String,
         @Body request: CrearRecordatorioRequest
     ): Response<RecordatorioDto>
+
+    @GET("operaciones/{operationId}")
+    suspend fun consultarOperacion(
+        @Path("operationId") operationId: String
+    ): Response<RecordatorioDto>
+
 }
